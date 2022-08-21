@@ -11,7 +11,7 @@ import "tfplan-functions" as plan
 # Allowed EC2 Zones
 # Include "null" to allow missing or computed values
 allowed_zones = [
-  "us-east-1a"
+  "us-east-1a",
 ]
 
 # Get all EC2 instances
