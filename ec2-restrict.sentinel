@@ -14,8 +14,14 @@ allowed_zones = [
   "us-east-1a",
 ]
 
-# Get all EC2 instances
-allEC2Instances = plan.find_resources("aws_instance")
+# # Get all EC2 instances
+# allEC2Instances = plan.find_resources("aws_instance")
+
+# Get all AWS instances from all modules
+allEC2Instances = filter tfplan.resource_changes as _, rc {
+    rc.type is "aws_instance" and
+        (rc.change.actions contains "create" or rc.change.actions is ["update"])
+}
 
 # Filter to EC2 instances with violations
 # Warnings will be printed for all violations since the last parameter is true
