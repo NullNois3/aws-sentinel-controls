@@ -1,34 +1,39 @@
-# This policy uses the Sentinel tfplan/v2 import to restrict
-# the availability zones used by EC2 instances.
-# This is an easier way to restrict regions than to restrict
-# the region of the AWS provider since that requires the
-# tfconfig/v2 import.
-
-# Import common-functions/tfplan-functions/tfplan-functions.sentinel
-# with alias "plan"
+# Imports mock data
 import "tfplan/v2" as tfplan
 
-# Allowed EC2 Zones
-# Include "null" to allow missing or computed values
-allowed_zones = [
-  "us-east-1a",
-]
-
-# # Get all EC2 instances
-# allEC2Instances = plan.find_resources("aws_instance")
-
 # Get all AWS instances from all modules
-allEC2Instances = filter tfplan.resource_changes as _, rc {
+ec2_instances = filter tfplan.resource_changes as _, rc {
     rc.type is "aws_instance" and
         (rc.change.actions contains "create" or rc.change.actions is ["update"])
 }
 
-# Filter to EC2 instances with violations
-# Warnings will be printed for all violations since the last parameter is true
-violatingEC2Instances = tfplan.filter_attribute_not_in_list(allEC2Instances,
-                        "availability_zone", allowed_zones, true)
+# # Mandatory Instance Tags
+# mandatory_tags = [
+#     "Name",
+# ]
 
-# Main rule
+# Allowed Types
+allowed_types = [
+    "t2.micro",
+]
+
+# # Rule to enforce "Name" tag on all instances
+# mandatory_instance_tags = rule {
+#     all ec2_instances as _, instance {
+#         all mandatory_tags as mt {
+#             instance.change.after.tags contains mt
+#         }
+#     }
+# }
+
+# Rule to restrict instance types
+instance_type_allowed = rule {
+    all ec2_instances as _, instance {
+        instance.change.after.instance_type in allowed_types
+    }
+}
+
+# Main rule that requires other rules to be true
 main = rule {
-  length(violatingEC2Instances["messages"]) is 0
+    (instance_type_allowed and mandatory_instance_tags) else true
 }
