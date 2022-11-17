@@ -8,6 +8,6 @@ module "aws-functions" {
 
 policy "aws-guardrails" {
   source            = "./ec2-restrict.sentinel"
-  enforcement_level = "hard-mandatory"
+  enforcement_level = "advisory"
 }
 
